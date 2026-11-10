@@ -1,0 +1,75 @@
+{
+    "name": "music-room-inventory",
+    "version": "1.0.0",
+    "description": "An inventory and maintenance tracker for elementary music classrooms.",
+    "main": "app.js",
+    "scripts": {
+        "start": "electron .",
+        "rebuild": "electron-rebuild -f -w better-sqlite3",
+        "postinstall": "electron-builder install-app-deps",
+        "pack": "electron-builder --dir --publish never",
+        "dist": "node scripts/build-windows.js --publish never",
+        "build:local": "node scripts/build-windows.js --publish never",
+        "build:release": "dotenv -- node scripts/build-windows.js --publish always"
+    },
+    "keywords": ["electron", "music", "inventory", "classroom", "education"],
+    "author": {
+        "name": "pconniff1-tech",
+        "url": "https://github.com/pconniff1-tech"
+    },
+    "license": "ISC",
+    "type": "commonjs",
+    "homepage": "https://github.com/pconniff1-tech/Elementary-Music-Room-Inventory#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/pconniff1-tech/Elementary-Music-Room-Inventory.git"
+    },
+    "bugs": {
+        "url": "https://github.com/pconniff1-tech/Elementary-Music-Room-Inventory/issues"
+    },
+    "dependencies": {
+        "better-sqlite3": "^11.0.0",
+        "dotenv": "^16.4.5",
+        "electron-updater": "^6.3.9"
+    },
+    "devDependencies": {
+        "@electron/rebuild": "^4.1.0",
+        "dotenv-cli": "^7.4.2",
+        "electron": "^31.0.0",
+        "electron-builder": "^24.13.3"
+    },
+    "build": {
+        "appId": "com.music.roominventory",
+        "productName": "Music Room Inventory",
+        "files": [
+            "app.js",
+            "database.js",
+            "preload.js",
+            "renderer.js",
+            "index.html"
+        ],
+        "asarUnpack": ["**/*.node"],
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "pconniff1-tech",
+                "repo": "Elementary-Music-Room-Inventory",
+                "releaseType": "release"
+            }
+        ],
+        "win": {
+            "artifactName": "${productName}-Setup-${version}.${ext}",
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": ["x64", "arm64"]
+                }
+            ]
+        },
+        "nsis": {
+            "oneClick": true,
+            "perMachine": false,
+            "deleteAppDataOnUninstall": false
+        }
+    }
+}

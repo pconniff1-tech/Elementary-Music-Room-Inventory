@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Music Room Inventory</title>
+  <!-- Ensure the app is responsive on different devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* 3. ADD THIS THIRD: Your master color variables */
+    :root {
+      --primary-blue: #007acc; /* Main branding color */
+      --repair-red: #dc3545;  /* Alert box highlight */
+      --good-green: #28a745;  /* Clean confirmation green */
+      --dark-text: #2d3748;   /* Soft charcoal for titles */
+      --bg-light: #f7f9fa;    /* Off-white background tint */
+    }
+
+    /* 4. BASE ELEMENT STYLES (Applies to the whole page) */
+    body {
+      /* Sets a clean font stack that looks beautiful on Windows and Mac */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
+      color: #333333;
+      margin: 20px;
+      height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      line-height: 1.5; /* Adds comfortable line spacing for reading lists */
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--dark-text);
+      margin-bottom: 25px;
+      font-size: 2rem;
+    }
+
+    h2 {
+      color: var(--dark-text);
+      border-bottom: 2px solid #edf2f7; /* Adds a nice separator line under headings */
+      padding-bottom: 8px;
+      margin-bottom: 15px;
+    }
+
+    .inventory-panels {
+      display: flex;
+      flex: 1;
+      gap: 20px;
+      min-height: 0;
+    }
+
+    .inventory-panel {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    #inventory-container,
+    #detail-container {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+   .category-card {
+  border: 1px solid #cbd5e0;
+  margin: 6px 0;          /* 💡 Reduced from 10px to pull cards closer together */
+  padding: 8px 12px;      /* 💡 Reduced from 15px to shrink top/bottom and sides */
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #fdfdfd;
+  transition: all 0.2s ease; 
+}
+
+    .inventory-category-section {
+      margin-bottom: 12px;
+    }
+
+    .inventory-category-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 4px;
+      border: 0;
+      border-bottom: 1px solid #cbd5e0;
+      background: transparent;
+      color: var(--dark-text);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .inventory-category-toggle:hover {
+      color: var(--primary-blue);
+    }
+
+    .inventory-category-toggle:focus-visible {
+      outline: 2px solid var(--primary-blue);
+      outline-offset: 2px;
+    }
+
+    .inventory-category-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .inventory-category-arrow {
+      width: 14px;
+      font-size: 11px;
+    }
+
+    .inventory-category-cards {
+      padding-top: 4px;
+    }
+
+    /* This special helper rule triggers ONLY when you hover your mouse over a card! */
+    .category-card:hover {
+      border-color: var(--primary-blue);
+      background-color: #f7fafc;
+      transform: translateY(-1px); /* Gently lifts the card up by 1 pixel */
+    }
+
+    /* This helper class gets slapped onto the card ONLY when it is active/selected */
+    .category-card.selected {
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2); /* Gives it a subtle neon glow outline */
+      background-color: #f0f7fd;
+    }
+
+    /* Blueprint for the individual instrument rows */
+    .breakdown-row {
+      position: relative; /* anchors the trash button to the card's top-right corner */
+      padding: 10px 44px 10px 10px; /* right padding keeps content clear of the trash button */
+      margin: 5px 0;
+      border-bottom: 1px solid #edf2f7;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 4px;
+    }
+
+    /* If an item needs repair, highlight its row container */
+    .breakdown-row.needs-upkeep {
+      background-color: #fff5f5;
+      border-bottom-color: #fed7d7;
+    }
+
+    /* Blueprint for the clickable text notes box */
+    .notes-display-box {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #4a5568;
+      font-style: italic;
+      cursor: text;
+      padding: 6px;
+      border: 1px dashed transparent;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .notes-display-box:hover {
+      border-color: #aaa;
+    }
+
+    /* Blueprint for the dynamic input box when you are actively typing */
+    .notes-edit-input {
+      width: 95%;
+      padding: 6px;
+      font-size: 13px;
+      border: 1px solid var(--primary-blue);
+      border-radius: 4px;
+      outline: none;
+    }
+
+    /* Visible focus indicator for the notes input */
+    .notes-edit-input:focus {
+      box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.2);
+      border-color: var(--primary-blue);
+    }
+
+    /* Blueprint for your action toggle buttons */
+    .toggle-status-btn {
+      margin-left: 10px;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: opacity 0.2s ease;
+    }
+
+    /* Makes the button gently dim when you hover over it */
+    .toggle-status-btn:hover {
+      opacity: 0.9;
+    }
+    .clickable-date-trigger:hover {
+        background-color: #edf2f7;
+        color: var(--primary-blue) !important;
+    }
+
+    .gap-left {
+        margin-left: 4px; /* Adjust this value as needed for the desired gap */
+    }
+
+    .delete-btn {
+        background: none;
+        border: none; /* Remove border styling */
+        cursor: pointer;
+    }
+
+    .breakdown-row .delete-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        margin-left: 0;
+    }
+
+    /* Shared hover feedback for icon-only buttons (gear, pencil, save, delete) */
+    .icon-btn {
+        border-radius: 4px;
+        transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .icon-btn:hover:not(.icon-btn-solid) {
+        /* !important needed since these buttons set background inline, which otherwise beats this rule */
+        background-color: #edf2f7 !important;
+    }
+
+    /* For buttons with a solid/colored background (e.g. the blue Add button), dim instead of graying out */
+    .icon-btn-solid:hover {
+        filter: brightness(0.9);
+    }
+
+    /* Pressed feedback so a click feels registered */
+    .icon-btn:active {
+        transform: scale(0.9);
+    }
+  </style>
+</head>
+<body>
+
+  <div style="position: relative;">
+    <h1>🎵 Music Room Inventory 🥁</h1>
+    <button id="open-category-settings-btn" title="Manage Categories" class="icon-btn" style="position: absolute; top: 0; right: 0; background: none; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer; font-size: 18px; padding: 6px 10px;">⚙️</button>
+  </div>
+  <p style="text-align: center;">Welcome, Maestro!</p>
+
+  <!-- Use a flexible layout side-by-side style -->
+  <div class="inventory-panels">
+    
+    <!-- Left Side: Main Inventory Catalog -->
+    <div class="inventory-panel">
+      <h2>Categories</h2>
+      <div id="inventory-container">
+        <p>Loading instruments...</p>
+      </div>
+    </div>
+
+    <!-- Right Side: Detailed View Panel & Add Form -->
+    <div class="inventory-panel" style="border-left: 2px solid #eee; padding-left: 20px;">
+      
+     <!-- Add Instrument Form Container -->
+<div style="background-color: #f7f9fa; padding: 12px 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #e1e4e6;">
+  
+  <!-- Clickable Header Header Wrapper -->
+  <div id="toggle-form-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+    <h3 style="margin: 0; font-size: 16px;">➕ Add New Inventory Item Group</h3>
+    <!-- The indicator arrow icon starts as closed (▶) -->
+    <span id="form-toggle-arrow" style="font-size: 14px; color: #666; transition: transform 0.2s;">▶</span>
+  </div>
+
+  <!-- Collapsible Wrapper (Hidden by default via display: none) -->
+  <div id="form-collapse-wrapper" style="display: none; margin-top: 15px;">
+    <form id="add-instrument-form" style="display: flex; flex-direction: column; gap: 10px;">
+      <div>
+        <label>Item Group Name:</label><br>
+        <input type="text" id="form-name" required placeholder="e.g., Xylophone, Boomwhackers" style="width: 95%; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+      </div>
+      
+      <div>
+        <label>Category:</label><br>
+        <select id="form-category" style="width: 98%; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+          <!-- JavaScript will inject choices here automatically -->
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <label>Starting Quantity:</label>
+          <input type="number" id="form-quantity" min="1" max="100" value="1" required style="width: 90%; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+        </div>
+        <div style="flex: 1;">
+          <label>Purchase Date:</label>
+          <input type="date" id="form-date" required style="width: 90%; padding: 5px;">
+        </div>
+      </div>
+
+      <button type="submit" style="background-color: #007acc; color: white; border: none; padding: 8px; border-radius: 3px; cursor: pointer; font-weight: bold; margin-top: 5px;">
+        Save to Inventory Database
+      </button>
+    </form>
+  </div>
+</div>
+
+<div id="detail-container">
+    <!-- Category selections populate text content dynamically here -->
+  </div>
+</div>
+
+  <!-- Inside index.html (Place near the bottom of the body) -->
+  <div id="edit-model-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 20px; border-radius: 8px; width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <h3 style="margin-top: 0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">✏️ Edit Instrument Details</h3>
+      <form id="edit-model-form" style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="hidden" id="edit-form-id">
+        <div>
+          <label>Instrument Name:</label><br>
+          <input type="text" id="edit-form-name" required style="width: 95%; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div>
+          <label>Category Group:</label><br>
+          <select id="edit-form-category" style="width: 99%; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+            <!-- JavaScript will inject choices here automatically -->
+          </select>
+        </div>
+        
+        <!-- Add more items to the class set layout -->
+        <div style="border-top: 1px dashed #cbd5e0; padding-top: 10px; margin-top: 5px;">
+          <label style="font-weight: bold; color: #007acc;">➕ Acquired more items for this set?</label><br>
+          <small style="color: #666; display: block; margin-bottom: 4px;">Enter a quantity to generate new individual entries matching this group.</small>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="number" id="edit-form-add-qty" min="0" value="0" style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+            <input type="date" id="edit-form-add-date" style="padding: 4px; flex: 1;">
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 10px;">
+          <button type="button" id="edit-modal-delete" class="icon-btn" style="background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; padding: 8px 12px; border-radius: 4px; cursor: pointer;">🗑️ Delete Instrument</button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" id="edit-modal-cancel" class="icon-btn" style="background: #e2e8f0; color: #2d3748; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+            <button type="submit" class="icon-btn" style="background: #007acc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Connect your frontend logic file -->
+  <script src="renderer.js"></script>
+
+  <!-- Manage Categories settings modal (top-level, not nested inside another modal) -->
+  <div id="category-settings-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 20px; border-radius: 8px; width: 420px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <h3 style="margin-top: 0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Manage Categories</h3>
+      <div id="category-list-wrapper" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px;">
+        <!-- JavaScript will inject one row per category here -->
+      </div>
+      <form id="add-category-form" style="display: flex; gap: 8px; margin-top: 14px; border-top: 1px dashed #cbd5e0; padding-top: 12px;">
+        <input type="text" id="new-category-name" placeholder="New category name" required style="flex: 1; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+        <button type="submit" class="icon-btn icon-btn-solid" style="background: #007acc; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">Add</button>
+      </form>
+      <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+        <button type="button" id="category-settings-close" class="icon-btn" style="background: #e2e8f0; color: #2d3748; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <template id="category-row-template">
+    <div class="category-settings-row" style="display: flex; gap: 6px; align-items: center;">
+      <input type="text" class="category-name-input" style="flex: 1; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+      <button type="button" class="category-save-btn icon-btn" title="Save" style="background: none; border: none; cursor: pointer; font-size: 15px; padding: 4px 6px;">💾</button>
+      <button type="button" class="category-delete-btn icon-btn" title="Delete" style="background: none; border: none; cursor: pointer; font-size: 15px; padding: 4px 6px;">🗑️</button>
+    </div>
+  </template>
+
+  <template id="breakdown-row-template">
+    <div class="breakdown-row">
+      <div class="row-info-column" style="flex: 1; padding-right: 15px;">
+        <strong class="asset-tag-display"></strong><br>
+        <small class="purchase-date-display clickable-date-trigger" style="color: #666; cursor: pointer; display: inline-block; padding: 2px 4px; border-radius: 3px; transition: background 0.2s;"></small><br>
+        <span class="status-text" style="font-weight: bold;"></span>
+        <button class="toggle-status-btn action-toggle"></button>
+      </div>
+    </div>
+  </template>
+
+</body>
+</html>
