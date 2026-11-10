@@ -1,6 +1,6 @@
 {
     "name": "music-room-inventory",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "An inventory and maintenance tracker for elementary music classrooms.",
     "main": "app.js",
     "scripts": {
@@ -12,7 +12,13 @@
         "build:local": "node scripts/build-windows.js --publish never",
         "build:release": "dotenv -- node scripts/build-windows.js --publish always"
     },
-    "keywords": ["electron", "music", "inventory", "classroom", "education"],
+    "keywords": [
+        "electron",
+        "music",
+        "inventory",
+        "classroom",
+        "education"
+    ],
     "author": {
         "name": "pconniff1-tech",
         "url": "https://github.com/pconniff1-tech"
@@ -49,7 +55,9 @@
             "updates.js",
             "index.html"
         ],
-        "asarUnpack": ["**/*.node"],
+        "asarUnpack": [
+            "**/*.node"
+        ],
         "publish": [
             {
                 "provider": "github",
@@ -63,7 +71,10 @@
             "target": [
                 {
                     "target": "nsis",
-                    "arch": ["x64", "arm64"]
+                    "arch": [
+                        "x64",
+                        "arm64"
+                    ]
                 }
             ]
         },
