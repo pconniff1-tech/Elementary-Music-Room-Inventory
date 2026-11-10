@@ -22,7 +22,12 @@ Then run `npm run build:release`; electron-builder builds the universal installe
 and publishes it to GitHub Releases. Git and a valid tag for the version are
 required for release publishing.
 
-The GitHub release configuration and `electron-updater` dependency prepare
-the app for a future updater, but automatic update checks and installation
-are not implemented yet. The `.env` file is for local publishing and is not
+In an installed Windows app, use the gear menu's **Check for Updates** option
+to check the public GitHub releases. If a newer release is available, choose
+**Update Now** to download it or **Update Later** to defer. Once downloaded,
+choose **Restart to Update** to install and restart. Closing the dialog does
+not install the update; open Check for Updates again to return to its status.
+Update checks are not supported in development mode. Releases must include
+electron-builder's update metadata and installer, and have a newer version
+than the installed app. The `.env` file is for local publishing and is not
 included in installers.

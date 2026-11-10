@@ -22,6 +22,7 @@
 - Manages categories: add, rename (also updates groups using the category), and delete (blocked while groups still use it).
 - Seeds default categories and starter inventory when the corresponding tables are empty.
 - Uses Electron IPC to keep database work in the main process and exposes a limited API to the renderer through `preload.js`.
+- The gear menu opens category configuration, About (current app version), and a manual Windows update workflow. Updates download only with consent and install only on an explicit restart.
 
 ## Coding Standards and Practices
 
@@ -165,6 +166,12 @@ Entries are ordered by `entry_date` descending, then `id` descending for matchin
 - Installed builds store the database and migration backup in per-user application data, separate from the development database. A new empty database is seeded with editable example inventory and default categories.
 - The Windows build script restores the development machine's native dependencies after packaging. Validation: universal installer built successfully, native modules matched both target architectures, and an isolated packaged database initialized example data and accepted a write.
 
+### 2026-11-10 — Added manual update checks
+
+- Added the gear menu, current-version About dialog, and manual check/download/restart workflow using `electron-updater`. The existing category configuration modal remains available from the menu.
+- Update downloads and installation require explicit user actions; checks are supported in installed Windows builds, not development mode.
+- Validation: updater controller tests and an Electron UI smoke test exercise the workflow with a simulated updater. An x64 NSIS build included the updater and GitHub update configuration. A real published update still requires end-to-end testing against a newer GitHub release.
+
 ## Issues fixed log
 
 The source contains these implemented corrections/migrations. Their original dates and release versions are not available in the workspace.
@@ -181,9 +188,7 @@ The source contains these implemented corrections/migrations. Their original dat
 
 ## Next steps / to-dos
 
-The update workflow below is requested follow-up work; the remaining entries are recommendations.
-
-1. **Build a check-for-updates workflow** in the settings gear at the top right of the main app window, using the existing GitHub release configuration and `electron-updater`. The updater is not implemented yet.
+1. **Test a real published update** from an older installed build to a newer GitHub release.
 2. **Add automated database tests** for CRUD behavior, category rules, tag-number allocation, and all database migrations; add a test command to `package.json`.
 3. **Define and test a backup/restore workflow.** Current backups are migration-triggered and kept beside the active database; no routine backup or restore UI is present.
 4. **Validate IPC payloads in the main process.** Check required text, quantity bounds, dates, status values, and referenced IDs before database writes.
@@ -194,6 +199,7 @@ The update workflow below is requested follow-up work; the remaining entries are
 - `app.js` — Electron window setup and IPC request handlers.
 - `preload.js` — renderer-safe `inventoryAPI` bridge.
 - `renderer.js` and `index.html` — inventory UI and interactions.
+- `updates.js` — manual updater state and actions in the main process.
 - `database.js` — SQLite schema, seed data, migrations, and database helpers.
 - `scripts/build-windows.js` — Windows packaging and restoration of development native dependencies.
 - `README.md` — development, installer, and release instructions.

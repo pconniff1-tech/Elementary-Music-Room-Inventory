@@ -610,6 +610,116 @@ toggleArrow.textContent = '▶';
 initializeCategoryDropdowns();
 loadMainDashboard();
 
+const settingsButton = document.getElementById('settings-btn');
+const settingsMenu = document.getElementById('settings-menu');
+const updateDialog = document.getElementById('update-dialog');
+const updateMessage = document.getElementById('update-message');
+const updateActionButton = document.getElementById('update-action-btn');
+const updateLaterButton = document.getElementById('update-later-btn');
+let updateState = { status: 'idle' };
+
+function closeSettingsMenu() {
+settingsMenu.hidden = true;
+settingsButton.setAttribute('aria-expanded', 'false');
+}
+
+settingsButton.addEventListener('click', () => {
+settingsMenu.hidden = !settingsMenu.hidden;
+settingsButton.setAttribute('aria-expanded', String(!settingsMenu.hidden));
+});
+
+document.addEventListener('click', event => {
+if (!settingsMenu.contains(event.target) && !settingsButton.contains(event.target)) closeSettingsMenu();
+});
+
+document.addEventListener('keydown', event => {
+if (event.key === 'Escape' && !settingsMenu.hidden) {
+closeSettingsMenu();
+settingsButton.focus();
+}
+});
+
+function renderUpdateState(state) {
+updateState = state;
+updateActionButton.hidden = true;
+updateLaterButton.textContent = 'Close';
+switch (state.status) {
+case 'checking':
+updateMessage.textContent = 'Checking for updates...';
+break;
+case 'available':
+updateMessage.textContent = `Version ${state.version} is available.`;
+updateActionButton.textContent = 'Update Now';
+updateActionButton.hidden = false;
+updateLaterButton.textContent = 'Update Later';
+break;
+case 'downloading':
+updateMessage.textContent = `Downloading version ${state.version}...`;
+break;
+case 'downloaded':
+updateMessage.textContent = `Version ${state.version} is ready to install.`;
+updateActionButton.textContent = 'Restart to Update';
+updateActionButton.hidden = false;
+updateLaterButton.textContent = 'Update Later';
+break;
+case 'installing':
+updateMessage.textContent = `Installing version ${state.version} and restarting...`;
+break;
+case 'up-to-date':
+updateMessage.textContent = 'You are using the latest version.';
+break;
+case 'unavailable':
+updateMessage.textContent = 'Updates are available in the installed Windows app, not in development mode or on other platforms.';
+break;
+case 'error':
+updateMessage.textContent = state.operation === 'download'
+? 'The update could not be downloaded. Check your connection and try again.'
+: state.operation === 'install'
+? 'The update could not be started. Please check for updates and try again.'
+: 'Could not check for updates. Check your connection and try again.';
+updateActionButton.textContent = 'Try Again';
+updateActionButton.hidden = false;
+break;
+default:
+updateMessage.textContent = 'Ready to check for updates.';
+}
+}
+
+async function runUpdateAction(action, operation = 'check') {
+try {
+renderUpdateState(await action());
+} catch (error) {
+console.error('Update request failed:', error);
+renderUpdateState({ status: 'error', operation });
+}
+}
+
+window.inventoryAPI.onUpdateStateChanged(renderUpdateState);
+
+document.getElementById('check-updates-btn').addEventListener('click', () => {
+closeSettingsMenu();
+if (!updateDialog.open) updateDialog.showModal();
+runUpdateAction(window.inventoryAPI.checkForUpdates);
+});
+
+updateLaterButton.addEventListener('click', () => updateDialog.close());
+updateActionButton.addEventListener('click', () => {
+if (updateState.status === 'available') runUpdateAction(window.inventoryAPI.downloadUpdate, 'download');
+else if (updateState.status === 'downloaded') runUpdateAction(window.inventoryAPI.restartToUpdate, 'install');
+else if (updateState.status === 'error') runUpdateAction(window.inventoryAPI.checkForUpdates);
+});
+
+document.getElementById('about-btn').addEventListener('click', async () => {
+closeSettingsMenu();
+try {
+const version = await window.inventoryAPI.getAppVersion();
+await window.inventoryAPI.showAlert(`Music Room Inventory\nVersion ${version}`);
+} catch (error) {
+console.error('Failed to show app version:', error);
+await window.inventoryAPI.showAlert('Could not display the app version.');
+}
+});
+
 const categorySettingsModal = document.getElementById('category-settings-modal');
 const categoryListWrapper = document.getElementById('category-list-wrapper');
 const categoryRowTemplate = document.getElementById('category-row-template');
@@ -633,6 +743,7 @@ categoryListWrapper.innerHTML = '<p style="color: red;">Error loading categories
 }
 
 document.getElementById('open-category-settings-btn').addEventListener('click', () => {
+closeSettingsMenu();
 // Show the modal immediately so it's never blocked by the data fetch below
 categorySettingsModal.style.display = 'flex';
 renderCategorySettingsList();

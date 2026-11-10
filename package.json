@@ -46,6 +46,7 @@
             "database.js",
             "preload.js",
             "renderer.js",
+            "updates.js",
             "index.html"
         ],
         "asarUnpack": ["**/*.node"],

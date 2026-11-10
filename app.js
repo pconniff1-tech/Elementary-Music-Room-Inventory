@@ -1,6 +1,18 @@
 const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
 const db = require('./database.js');
+const { autoUpdater } = require('electron-updater');
+const { createUpdateController } = require('./updates.js');
+
+const updates = createUpdateController({
+  app,
+  updater: autoUpdater,
+  onChange: state => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) window.webContents.send('update-state-changed', state);
+    }
+  }
+});
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -38,6 +50,11 @@ app.on('window-all-closed', function () {
 
 //First Listener
 const { ipcMain } = require('electron');
+
+ipcMain.handle('get-app-version', () => app.getVersion());
+ipcMain.handle('check-for-updates', () => updates.check());
+ipcMain.handle('download-update', () => updates.download());
+ipcMain.handle('restart-to-update', () => updates.restart());
 
 // Native dialogs shown from the main process. The renderer's built-in alert()/confirm()
 // leave Electron windows unable to focus text fields afterwards, so we avoid them.

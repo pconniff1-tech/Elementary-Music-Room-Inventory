@@ -2,6 +2,13 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 // Expose a safe, custom API to our renderer.js file
 contextBridge.exposeInMainWorld('inventoryAPI', {
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    downloadUpdate: () => ipcRenderer.invoke('download-update'),
+    restartToUpdate: () => ipcRenderer.invoke('restart-to-update'),
+    onUpdateStateChanged: (callback) => {
+        ipcRenderer.on('update-state-changed', (_event, state) => callback(state));
+    },
     // Dialogs that don't break text field focus like the renderer's alert()/confirm() do
     showConfirm: (message) => ipcRenderer.invoke('show-confirm-dialog', message),
     showAlert: (message) => ipcRenderer.invoke('show-alert-dialog', message),
